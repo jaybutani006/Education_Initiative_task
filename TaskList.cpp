@@ -19,7 +19,6 @@ void TaskList::markTaskCompleted(int taskNumber)
             if (pendingTaskCount == taskNumber)
             {
                 task = Task::Builder(task.getDescription()).setCompleted(true).setDueDate(task.getDueDate()).build();
-                // Save the state for undo/redo
                 saveState();
                 return;
             }
@@ -34,15 +33,12 @@ void TaskList::deleteTask(int taskNumber)
     {
         tasks.erase(tasks.begin() + taskNumber - 1);
         std::cout << "Task deleted successfully." << std::endl;
-
-        // Save the state for undo/redo
         saveState();
     }
     else
     {
         std::cout << "Invalid task number. No task deleted." << std::endl;
     }
-    // saveState();
 }
 
 void TaskList::viewTasks(const std::string &filter) const
@@ -75,10 +71,8 @@ void TaskList::undo()
         caretakerIndex--;
         const std::vector<std::string> &state = caretaker.getMemento(caretakerIndex).getState();
 
-        // Check if the state size matches the current tasks size
         if (state.size() == tasks.size())
         {
-            // Find the index of the last completed task
             int lastCompletedIndex = -1;
             for (size_t i = 0; i < tasks.size(); i++)
             {
@@ -88,25 +82,22 @@ void TaskList::undo()
                 }
             }
 
-            // Update the tasks with the state information while preserving completion status
             for (size_t i = 0; i < tasks.size(); i++)
             {
                 Task::Builder builder(state[i]);
                 Task task = builder.build();
 
-                // Preserve the completion status of the task
                 tasks[i] = Task::Builder(tasks[i].getDescription())
                                .setDueDate(tasks[i].getDueDate())
                                .setCompleted(task.isCompleted())
                                .build();
             }
 
-            // Only change the last completed task to pending if it was previously completed
             if (lastCompletedIndex >= 0)
             {
                 tasks[lastCompletedIndex] = Task::Builder(tasks[lastCompletedIndex].getDescription())
                                                 .setDueDate(tasks[lastCompletedIndex].getDueDate())
-                                                .setCompleted(false) // Change to pending
+                                                .setCompleted(false)
                                                 .build();
             }
 
@@ -130,10 +121,8 @@ void TaskList::redo()
         caretakerIndex++;
         const std::vector<std::string> &state = caretaker.getMemento(caretakerIndex).getState();
 
-        // Check if the state size matches the current tasks size
         if (state.size() == tasks.size())
         {
-            // Find the index of the last pending task
             int lastPendingIndex = -1;
             for (size_t i = 0; i < tasks.size(); i++)
             {
@@ -143,25 +132,22 @@ void TaskList::redo()
                 }
             }
 
-            // Update the tasks with the state information while preserving completion status
             for (size_t i = 0; i < tasks.size(); i++)
             {
                 Task::Builder builder(state[i]);
                 Task task = builder.build();
 
-                // Preserve the completion status of the task
                 tasks[i] = Task::Builder(tasks[i].getDescription())
                                .setDueDate(tasks[i].getDueDate())
                                .setCompleted(task.isCompleted())
                                .build();
             }
 
-            // Only change the last undone (previously pending) task to completed if it was previously pending
             if (lastPendingIndex >= 0)
             {
                 tasks[lastPendingIndex] = Task::Builder(tasks[lastPendingIndex].getDescription())
                                               .setDueDate(tasks[lastPendingIndex].getDueDate())
-                                              .setCompleted(true) // Change to completed
+                                              .setCompleted(true)
                                               .build();
             }
 
@@ -182,8 +168,7 @@ void TaskList::saveState()
 {
     if (caretakerIndex == caretakerSize - 1)
     {
-        caretakerIndex--;
-        caretaker.getMemento(0); // Remove the oldest state
+        caretaker.getMemento(0);
     }
 
     std::vector<std::string> taskDescriptions;
@@ -194,16 +179,76 @@ void TaskList::saveState()
 
     Memento memento(taskDescriptions);
     caretaker.addMemento(memento);
-    caretakerIndex++;
+
+    if (caretakerIndex < caretakerSize - 1)
+    {
+        caretakerIndex++;
+    }
 }
 
 void markPendingTaskCompleted(TaskList &taskList)
 {
-    int taskNumber = 1;
-    std::cout << "Pending Tasks:\n";
-    for (const Task &task : taskList.getTasks())
+    while (true)
     {
-        if (!task.isCompleted())
+        int taskNumber = 1;
+        std::cout << "Pending Tasks:\n";
+        for (const Task &task : taskList.getTasks())
+        {
+            if (!task.isCompleted())
+            {
+                std::cout << taskNumber << ". " << task.getDescription();
+                if (!task.getDueDate().empty())
+                {
+                    std::cout << ", Due: " << task.getDueDate();
+                }
+                std::cout << std::endl;
+                taskNumber++;
+            }
+        }
+
+        int selectedTask;
+        while (true)
+        {
+            std::cout << "Enter the number of the task to mark as completed (0 to cancel): ";
+            std::string input;
+            std::getline(std::cin, input);
+
+            std::stringstream ss(input);
+            if (ss >> selectedTask)
+            {
+                if (selectedTask == 0)
+                {
+                    std::cout << "Operation canceled." << std::endl;
+                    return;
+                }
+                else if (selectedTask >= 1 && selectedTask <= taskNumber - 1)
+                {
+                    taskList.markTaskCompleted(selectedTask);
+                    std::cout << "Task marked as completed." << std::endl;
+
+                    const Task &completedTask = taskList.getTasks()[selectedTask - 1];
+                    if (!completedTask.getDueDate().empty())
+                    {
+                        std::cout << "Due Date: " << completedTask.getDueDate() << std::endl;
+                    }
+
+                    std::cout << std::endl;
+                    return; 
+                }
+            }
+
+            std::cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
+        }
+    }
+}
+
+void deleteTaskByNumber(TaskList &taskList)
+{
+    while (true)
+    {
+        int taskNumber = 1;
+        std::cout << "All Tasks:\n";
+        for (const Task &task : taskList.getTasks())
         {
             std::cout << taskNumber << ". " << task.getDescription();
             if (!task.getDueDate().empty())
@@ -213,81 +258,31 @@ void markPendingTaskCompleted(TaskList &taskList)
             std::cout << std::endl;
             taskNumber++;
         }
-    }
 
-    int selectedTask;
-    while (true)
-    {
-        std::cout << "Enter the number of the task to mark as completed (0 to cancel): ";
-        std::string input;
-        std::getline(std::cin, input);
-
-        std::stringstream ss(input);
-        if (ss >> selectedTask && selectedTask >= 1 && selectedTask <= taskNumber - 1)
+        int selectedTask;
+        while (true)
         {
-            taskList.markTaskCompleted(selectedTask);
-            std::cout << "Task marked as completed." << std::endl;
+            std::cout << "Enter the number of the task to delete (0 to cancel): ";
+            std::string input;
+            std::getline(std::cin, input);
 
-            // Display the due date of the completed task
-            const Task &completedTask = taskList.getTasks()[selectedTask - 1];
-            if (!completedTask.getDueDate().empty())
+            std::stringstream ss(input);
+            if (ss >> selectedTask)
             {
-                std::cout << "Due Date: " << completedTask.getDueDate() << std::endl;
+                if (selectedTask == 0)
+                {
+                    std::cout << "Operation canceled." << std::endl;
+                    return; 
+                }
+                else if (selectedTask >= 1 && selectedTask <= taskNumber - 1)
+                {
+                    taskList.deleteTask(selectedTask);
+                    std::cout << std::endl;
+                    return;
+                }
             }
 
-            std::cout << std::endl;
-            break;
-        }
-        else if (selectedTask == 0)
-        {
-            std::cout << "Operation canceled." << std::endl;
-            break;
-        }
-        else
-        {
-            std::cout << "Invalid task number. Please enter a valid task number or 0 to cancel.\n";
-        }
-    }
-}
-
-void deleteTaskByNumber(TaskList &taskList)
-{
-    int taskNumber = 1;
-    std::cout << "All Tasks:\n";
-    for (const Task &task : taskList.getTasks())
-    {
-        std::cout << taskNumber << ". " << task.getDescription();
-        if (!task.getDueDate().empty())
-        {
-            std::cout << ", Due: " << task.getDueDate();
-        }
-        std::cout << std::endl;
-        taskNumber++;
-    }
-
-    int selectedTask;
-    while (true)
-    {
-        std::cout << "Enter the number of the task to delete (0 to cancel): ";
-        std::string input;
-        std::getline(std::cin, input);
-
-        std::stringstream ss(input);
-        if (ss >> selectedTask && selectedTask >= 1 && selectedTask <= taskNumber - 1)
-        {
-            taskList.deleteTask(selectedTask);
-            std::cout << "Task deleted successfully." << std::endl;
-            std::cout << std::endl;
-            break;
-        }
-        else if (selectedTask == 0)
-        {
-            std::cout << "Operation canceled." << std::endl;
-            break;
-        }
-        else
-        {
-            std::cout << "Invalid task number. Please enter a valid task number or 0 to cancel.\n";
+            std::cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
         }
     }
 }
