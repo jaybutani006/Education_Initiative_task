@@ -1,15 +1,16 @@
 #pragma once
 #include <vector>
 #include <string>
+using namespace std;
 
 class Memento
 {
 public:
-    Memento(const std::vector<std::string> &taskList);
-    const std::vector<std::string> &getState() const;
+    Memento(const vector<string> &taskList);
+    const vector<string> &getState() const;
 
 private:
-    std::vector<std::string> state;
+    vector<string> state;
 };
 
 class Caretaker
@@ -19,7 +20,8 @@ public:
     Memento getMemento(int index) const;
     int getMementoCount() const;
 
+
 private:
-    std::vector<Memento> mementos;
+    vector<Memento> mementos;
     int mementoCount = 0;
 };

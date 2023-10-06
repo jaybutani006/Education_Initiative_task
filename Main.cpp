@@ -3,30 +3,32 @@
 #include "TaskList.h"
 #include "Memento.h"
 #include <sstream>
+using namespace std;
+
 int main()
 {
     TaskList taskList;
 
     while (true)
     {
-        std::cout << "Options:\n";
-        std::cout << "1. Add Task\n";
-        std::cout << "2. Mark Completed\n";
-        std::cout << "3. Delete Task\n";
-        std::cout << "4. View Tasks\n";
-        std::cout << "5. Undo\n";
-        std::cout << "6. Redo\n";
-        std::cout << "7. Exit\n";
-        std::cout << "Enter your choice: ";
+        cout << "Options:\n";
+        cout << "1. Add Task\n";
+        cout << "2. Mark Completed\n";
+        cout << "3. Delete Task\n";
+        cout << "4. View Tasks\n";
+        cout << "5. Undo\n";
+        cout << "6. Redo\n";
+        cout << "7. Exit\n";
+        cout << "Enter your choice: ";
 
-        std::string choiceStr;
-        std::getline(std::cin, choiceStr);
+        string choiceStr;
+        getline(cin, choiceStr);
 
         int choice;
-        std::stringstream ss(choiceStr);
+        stringstream ss(choiceStr);
         if (!(ss >> choice) || choice < 1 || choice > 7)
         {
-            std::cout << "Invalid choice. Please enter a number between 1 and 7.\n";
+            cout << "Invalid choice. Please enter a number between 1 and 7.\n";
             continue;
         }
 
@@ -34,30 +36,39 @@ int main()
         {
         case 1:
         {
-            std::string description, dueDate;
-            std::cout << "Enter task description: ";
-            std::getline(std::cin, description);
-            bool isValid;
+            string description, dueDate;
+            cout << "Enter task description: ";
+            getline(cin, description);
+            bool isDateValid = true;
+
             do
             {
-                isValid = true;
-                if (!isValid)
-                {
-                    std::cout << "Invalid date format or past date. Please enter a future date in DD/MM/YYYY format." << std::endl;
-                }
-                std::cout << "Enter due date in DD/MM/YYYY format (optional): ";
-                std::getline(std::cin, dueDate);
+                isDateValid = true;
+                cout << "Enter due date in DD/MM/YYYY format (optional, press Enter to skip): ";
+                getline(cin, dueDate);
+
                 Task::Builder taskBuilder(description);
-                if (!dueDate.empty())
+
+                if (!dueDate.empty() && !taskBuilder.isValidDate(dueDate))
                 {
-                    taskBuilder.setDueDate(dueDate);
+                    cout << "Invalid date format or past date. Please enter a future date in DD/MM/YYYY format." << endl;
+                    isDateValid = false;
                 }
-                isValid = taskBuilder.isValidDate(dueDate);
-            } while (!isValid);
-            Task task = Task::Builder(description).setDueDate(dueDate).build();
-            taskList.addTask(task);
-            std::cout << "Task added successfully." << std::endl;
-            std::cout << std::endl;
+            } while (!isDateValid);
+            if (!dueDate.empty())
+            {
+                Task task = Task::Builder(description).setDueDate(dueDate).build();
+                taskList.addTask(task);
+                cout << "Task added successfully." << endl;
+            }
+            else
+            {
+                Task task = Task::Builder(description).build();
+                taskList.addTask(task);
+                cout << "Task added without a due date." << endl;
+            }
+
+            cout << endl;
             break;
         }
         case 2:
@@ -72,28 +83,28 @@ int main()
         }
         case 4:
         {
-            std::string filter;
+            string filter;
             int filterChoice;
 
             while (true)
             {
-                std::cout << "Options:\n";
-                std::cout << "1. Show all\n";
-                std::cout << "2. Show completed\n";
-                std::cout << "3. Show pending\n";
-                std::cout << "Enter your choice: ";
+                cout << "Options:\n";
+                cout << "1. Show all\n";
+                cout << "2. Show completed\n";
+                cout << "3. Show pending\n";
+                cout << "Enter your choice: ";
 
-                std::string input;
-                std::getline(std::cin, input);
+                string input;
+                getline(cin, input);
 
-                std::stringstream ss(input);
+                stringstream ss(input);
                 if (ss >> filterChoice && filterChoice >= 1 && filterChoice <= 3)
                 {
                     break;
                 }
                 else
                 {
-                    std::cout << "Invalid choice. Please enter a valid option (1, 2, or 3).\n";
+                    cout << "Invalid choice. Please enter a valid option (1, 2, or 3).\n";
                 }
             }
 
@@ -126,9 +137,8 @@ int main()
         case 7:
             return 0;
         default:
-            std::cout << "Invalid choice. Please try again.\n";
+            cout << "Invalid choice. Please try again.\n";
         }
     }
-
     return 0;
 }

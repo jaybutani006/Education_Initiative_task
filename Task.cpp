@@ -2,11 +2,12 @@
 #include <iostream>
 #include <bits/stdc++.h>
 // Define the Task class methods
+using namespace std;
 
-Task::Task(const std::string &desc, bool comp, const std::string &date)
+Task::Task(const string &desc, bool comp, const string &date)
     : description(desc), completed(comp), dueDate(date) {}
 
-std::string Task::getDescription() const
+string Task::getDescription() const
 {
     return description;
 }
@@ -16,14 +17,14 @@ bool Task::isCompleted() const
     return completed;
 }
 
-std::string Task::getDueDate() const
+string Task::getDueDate() const
 {
     return dueDate;
 }
 
 // Define the Task::Builder class methods
 
-Task::Builder::Builder(const std::string &desc)
+Task::Builder::Builder(const string &desc)
     : description(desc), completed(false), dueDate("") {}
 
 Task::Builder &Task::Builder::setCompleted(bool comp)
@@ -32,7 +33,7 @@ Task::Builder &Task::Builder::setCompleted(bool comp)
     return *this;
 }
 
-Task::Builder &Task::Builder::setDueDate(const std::string &date)
+Task::Builder &Task::Builder::setDueDate(const string &date)
 {
     if (isValidDate(date))
     {
@@ -40,7 +41,7 @@ Task::Builder &Task::Builder::setDueDate(const std::string &date)
     }
     else
     {
-        std::cout << "Invalid date format or past date. Please enter a future date in DD/MM/YYYY format." << std::endl;
+        cout << "Invalid date format or past date. Please enter a future date in DD/MM/YYYY format." << endl;
     }
     return *this;
 }
@@ -50,24 +51,25 @@ Task Task::Builder::build()
     return Task(description, completed, dueDate);
 }
 
-bool Task::Builder::isValidDate(const std::string &date) const
+bool Task::Builder::isValidDate(const string &date) const
 {
-    std::regex datePattern("^\\d{2}/\\d{2}/\\d{4}$");
-    if (!std::regex_match(date, datePattern))
+    regex datePattern("^\\d{2}/\\d{2}/\\d{4}$");
+    if (!regex_match(date, datePattern))
     {
         return false;
     }
 
-    std::tm tm = {};
-    std::istringstream ss(date);
-    ss >> std::get_time(&tm, "%d/%m/%Y");
+    tm tm = {};
+    istringstream ss(date);
+    ss >> get_time(&tm, "%d/%m/%Y");
     if (ss.fail())
     {
         return false;
     }
 
-    std::time_t now = std::time(nullptr);
-    std::time_t dueTime = std::mktime(&tm);
+    time_t now = time(nullptr);
+    time_t dueTime = mktime(&tm);
+    
     if (dueTime <= now)
     {
         return false;

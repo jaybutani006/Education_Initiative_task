@@ -1,12 +1,24 @@
 #include "TaskList.h"
 #include <iostream>
 #include <sstream>
+using namespace std;
 
 void TaskList::addTask(const Task &task)
 {
-    tasks.push_back(task);
+    if (task.getDueDate().empty())
+    {
+        tasks.push_back(Task::Builder(task.getDescription())
+                            .setCompleted(task.isCompleted())
+                            .setDueDate("")
+                            .build());
+    }
+    else
+    {
+        tasks.push_back(task);
+    }
     saveState();
 }
+
 
 void TaskList::markTaskCompleted(int taskNumber)
 {
@@ -18,13 +30,17 @@ void TaskList::markTaskCompleted(int taskNumber)
             pendingTaskCount++;
             if (pendingTaskCount == taskNumber)
             {
-                task = Task::Builder(task.getDescription()).setCompleted(true).setDueDate(task.getDueDate()).build();
+                std::string originalDueDate = task.getDueDate();
+
+                task = Task::Builder(task.getDescription())
+                           .setCompleted(true)
+                           .setDueDate(originalDueDate)
+                           .build();
                 saveState();
                 return;
             }
         }
     }
-    // saveState();
 }
 
 void TaskList::deleteTask(int taskNumber)
@@ -32,34 +48,38 @@ void TaskList::deleteTask(int taskNumber)
     if (taskNumber >= 1 && taskNumber <= tasks.size())
     {
         tasks.erase(tasks.begin() + taskNumber - 1);
-        std::cout << "Task deleted successfully." << std::endl;
+        cout << "Task deleted successfully." << endl;
         saveState();
     }
     else
     {
-        std::cout << "Invalid task number. No task deleted." << std::endl;
+        cout << "Invalid task number. No task deleted." << endl;
     }
 }
 
-void TaskList::viewTasks(const std::string &filter) const
+void TaskList::viewTasks(const string &filter) const
 {
-    std::cout << std::endl;
+    cout << endl;
     for (const Task &task : tasks)
     {
         if (filter == "Show all" || (filter == "Show completed" && task.isCompleted()) || (filter == "Show pending" && !task.isCompleted()))
         {
-            std::cout << task.getDescription() << " - " << (task.isCompleted() ? "Completed" : "Pending");
+            cout << task.getDescription() << " - " << (task.isCompleted() ? "Completed" : "Pending");
             if (!task.getDueDate().empty())
             {
-                std::cout << ", Due: " << task.getDueDate();
+                cout << ", Due: " << task.getDueDate();
             }
-            std::cout << std::endl;
+            else
+            {
+                cout << ", Due: N/A";
+            }
+            cout << endl;
         }
     }
-    std::cout << std::endl;
+    cout << endl;
 }
 
-const std::vector<Task> &TaskList::getTasks() const
+const vector<Task> &TaskList::getTasks() const
 {
     return tasks;
 }
@@ -86,11 +106,20 @@ void TaskList::undo()
             {
                 Task::Builder builder(state[i]);
                 Task task = builder.build();
-
-                tasks[i] = Task::Builder(tasks[i].getDescription())
-                               .setDueDate(tasks[i].getDueDate())
-                               .setCompleted(task.isCompleted())
-                               .build();
+                if (task.isCompleted())
+                {
+                    tasks[i] = Task::Builder(tasks[i].getDescription())
+                                   .setDueDate(tasks[i].getDueDate())
+                                   .setCompleted(task.isCompleted())
+                                   .build();
+                }
+                else
+                {
+                    tasks[i] = Task::Builder(tasks[i].getDescription())
+                                   .setDueDate("")
+                                   .setCompleted(task.isCompleted())
+                                   .build();
+                }
             }
 
             if (lastCompletedIndex >= 0)
@@ -101,16 +130,16 @@ void TaskList::undo()
                                                 .build();
             }
 
-            std::cout << "Undo operation performed." << std::endl;
+            cout << "Undo operation performed." << endl;
         }
         else
         {
-            std::cout << "Undo operation failed. State data mismatch." << std::endl;
+            cout << "Undo operation failed. State data mismatch." << endl;
         }
     }
     else
     {
-        std::cout << "Nothing to undo." << std::endl;
+        cout << "Nothing to undo." << endl;
     }
 }
 
@@ -119,7 +148,7 @@ void TaskList::redo()
     if (caretakerIndex < caretaker.getMementoCount() - 1)
     {
         caretakerIndex++;
-        const std::vector<std::string> &state = caretaker.getMemento(caretakerIndex).getState();
+        const vector<string> &state = caretaker.getMemento(caretakerIndex).getState();
 
         if (state.size() == tasks.size())
         {
@@ -151,16 +180,16 @@ void TaskList::redo()
                                               .build();
             }
 
-            std::cout << "Redo operation performed." << std::endl;
+            cout << "Redo operation performed." << endl;
         }
         else
         {
-            std::cout << "Redo operation failed. State data mismatch." << std::endl;
+            cout << "Redo operation failed. State data mismatch." << endl;
         }
     }
     else
     {
-        std::cout << "Nothing to redo." << std::endl;
+        cout << "Nothing to redo." << endl;
     }
 }
 
@@ -171,7 +200,7 @@ void TaskList::saveState()
         caretaker.getMemento(0);
     }
 
-    std::vector<std::string> taskDescriptions;
+    vector<string> taskDescriptions;
     for (const Task &task : tasks)
     {
         taskDescriptions.push_back(task.getDescription());
@@ -191,17 +220,17 @@ void markPendingTaskCompleted(TaskList &taskList)
     while (true)
     {
         int taskNumber = 1;
-        std::cout << "Pending Tasks:\n";
+        cout << "Pending Tasks:\n";
         for (const Task &task : taskList.getTasks())
         {
             if (!task.isCompleted())
             {
-                std::cout << taskNumber << ". " << task.getDescription();
+                cout << taskNumber << ". " << task.getDescription();
                 if (!task.getDueDate().empty())
                 {
-                    std::cout << ", Due: " << task.getDueDate();
+                    cout << ", Due: " << task.getDueDate();
                 }
-                std::cout << std::endl;
+                cout << endl;
                 taskNumber++;
             }
         }
@@ -209,35 +238,35 @@ void markPendingTaskCompleted(TaskList &taskList)
         int selectedTask;
         while (true)
         {
-            std::cout << "Enter the number of the task to mark as completed (0 to cancel): ";
-            std::string input;
-            std::getline(std::cin, input);
+            cout << "Enter the number of the task to mark as completed (0 to cancel): ";
+            string input;
+            getline(cin, input);
 
-            std::stringstream ss(input);
+            stringstream ss(input);
             if (ss >> selectedTask)
             {
                 if (selectedTask == 0)
                 {
-                    std::cout << "Operation canceled." << std::endl;
+                    cout << "Operation canceled." << endl;
                     return;
                 }
                 else if (selectedTask >= 1 && selectedTask <= taskNumber - 1)
                 {
                     taskList.markTaskCompleted(selectedTask);
-                    std::cout << "Task marked as completed." << std::endl;
+                    cout << "Task marked as completed." << endl;
 
                     const Task &completedTask = taskList.getTasks()[selectedTask - 1];
                     if (!completedTask.getDueDate().empty())
                     {
-                        std::cout << "Due Date: " << completedTask.getDueDate() << std::endl;
+                        cout << "Due Date: " << completedTask.getDueDate() << endl;
                     }
 
-                    std::cout << std::endl;
+                    cout << endl;
                     return; 
                 }
             }
 
-            std::cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
+            cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
         }
     }
 }
@@ -247,42 +276,42 @@ void deleteTaskByNumber(TaskList &taskList)
     while (true)
     {
         int taskNumber = 1;
-        std::cout << "All Tasks:\n";
+        cout << "All Tasks:\n";
         for (const Task &task : taskList.getTasks())
         {
-            std::cout << taskNumber << ". " << task.getDescription();
+            cout << taskNumber << ". " << task.getDescription();
             if (!task.getDueDate().empty())
             {
-                std::cout << ", Due: " << task.getDueDate();
+                cout << ", Due: " << task.getDueDate();
             }
-            std::cout << std::endl;
+            cout << endl;
             taskNumber++;
         }
 
         int selectedTask;
         while (true)
         {
-            std::cout << "Enter the number of the task to delete (0 to cancel): ";
-            std::string input;
-            std::getline(std::cin, input);
+            cout << "Enter the number of the task to delete (0 to cancel): ";
+            string input;
+            getline(cin, input);
 
-            std::stringstream ss(input);
+            stringstream ss(input);
             if (ss >> selectedTask)
             {
                 if (selectedTask == 0)
                 {
-                    std::cout << "Operation canceled." << std::endl;
+                    cout << "Operation canceled." << endl;
                     return; 
                 }
                 else if (selectedTask >= 1 && selectedTask <= taskNumber - 1)
                 {
                     taskList.deleteTask(selectedTask);
-                    std::cout << std::endl;
+                    cout << endl;
                     return;
                 }
             }
 
-            std::cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
+            cout << "Invalid input. Please enter a valid task number or 0 to cancel.\n";
         }
     }
 }

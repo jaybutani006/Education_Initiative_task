@@ -2,43 +2,45 @@
 #define TASK_H
 
 #include <string>
+using namespace std;
 
 class Task
 {
 public:
     class Builder;
 
-    std::string getDescription() const;
+    string getDescription() const;
 
     bool isCompleted() const;
 
-    std::string getDueDate() const;
+    string getDueDate() const;
 
 private:
-    std::string description;
+    string description;
     bool completed;
-    std::string dueDate;
+    string dueDate;
 
-    Task(const std::string &desc, bool comp, const std::string &date);
+    Task(const string &desc, bool comp, const string &date);
 };
+
 
 class Task::Builder
 {
 public:
-    Builder(const std::string &desc);
+    Builder(const string &desc);
 
     Builder &setCompleted(bool comp);
 
-    Builder &setDueDate(const std::string &date);
+    Builder &setDueDate(const string &date);
 
     Task build();
 
-    bool isValidDate(const std::string &date) const;
+    bool isValidDate(const string &date) const;
 
 private:
-    std::string description;
+    string description;
     bool completed;
-    std::string dueDate;
+    string dueDate;
 };
 
 #endif // TASK_H

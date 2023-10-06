@@ -1,8 +1,9 @@
 #include "Memento.h"
+using namespace std;
 
-Memento::Memento(const std::vector<std::string> &taskList) : state(taskList) {}
+Memento::Memento(const vector<string> &taskList) : state(taskList) {}
 
-const std::vector<std::string> &Memento::getState() const
+const vector<string> &Memento::getState() const
 {
     return state;
 }
@@ -17,9 +18,10 @@ Memento Caretaker::getMemento(int index) const
 {
     if (index >= 0 && index < mementos.size())
     {
+        
         return mementos[index];
     }
-    return Memento(std::vector<std::string>());
+    return Memento(vector<string>());
 }
 
 int Caretaker::getMementoCount() const
